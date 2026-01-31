@@ -25,8 +25,9 @@ app.use(express.json());
 const stockCache = new Map();
 const CACHE_DURATION = 60 * 1000;
 
-// Popular Indian stocks with realistic base data
+// Popular Indian stocks with realistic base data - Comprehensive NSE List
 const INDIAN_STOCKS = {
+  // === NIFTY 50 STOCKS ===
   'RELIANCE.NS': { name: 'Reliance Industries', sector: 'Oil & Gas', basePrice: 2450 },
   'TCS.NS': { name: 'Tata Consultancy Services', sector: 'IT', basePrice: 3850 },
   'HDFCBANK.NS': { name: 'HDFC Bank', sector: 'Banking', basePrice: 1620 },
@@ -57,23 +58,333 @@ const INDIAN_STOCKS = {
   'ADANIENT.NS': { name: 'Adani Enterprises', sector: 'Conglomerate', basePrice: 2650 },
   'ADANIPORTS.NS': { name: 'Adani Ports', sector: 'Infrastructure', basePrice: 1180 },
   'ONGC.NS': { name: 'ONGC', sector: 'Oil & Gas', basePrice: 245 },
-  'ZOMATO.NS': { name: 'Zomato', sector: 'Food Tech', basePrice: 185 },
-  'PAYTM.NS': { name: 'Paytm (One97)', sector: 'Fintech', basePrice: 485 },
-  'NYKAA.NS': { name: 'Nykaa (FSN E-Commerce)', sector: 'E-Commerce', basePrice: 168 },
-  'DMART.NS': { name: 'Avenue Supermarts (DMart)', sector: 'Retail', basePrice: 3850 },
   'BAJAJ-AUTO.NS': { name: 'Bajaj Auto', sector: 'Automobile', basePrice: 8250 },
   'HEROMOTOCO.NS': { name: 'Hero MotoCorp', sector: 'Automobile', basePrice: 4380 },
   'EICHERMOT.NS': { name: 'Eicher Motors', sector: 'Automobile', basePrice: 4520 },
   'DRREDDY.NS': { name: 'Dr. Reddys Labs', sector: 'Pharma', basePrice: 5680 },
   'CIPLA.NS': { name: 'Cipla', sector: 'Pharma', basePrice: 1420 },
   'DIVISLAB.NS': { name: 'Divis Labs', sector: 'Pharma', basePrice: 3650 },
+  'BPCL.NS': { name: 'Bharat Petroleum', sector: 'Oil & Gas', basePrice: 385 },
+  'GRASIM.NS': { name: 'Grasim Industries', sector: 'Cement', basePrice: 2150 },
+  'BRITANNIA.NS': { name: 'Britannia Industries', sector: 'FMCG', basePrice: 4850 },
+  'COALINDIA.NS': { name: 'Coal India', sector: 'Mining', basePrice: 385 },
+  'HINDALCO.NS': { name: 'Hindalco Industries', sector: 'Metals', basePrice: 485 },
+  'APOLLOHOSP.NS': { name: 'Apollo Hospitals', sector: 'Healthcare', basePrice: 5850 },
+  'SBILIFE.NS': { name: 'SBI Life Insurance', sector: 'Insurance', basePrice: 1420 },
+  'HDFCLIFE.NS': { name: 'HDFC Life Insurance', sector: 'Insurance', basePrice: 625 },
+  'BAJAJFINSV.NS': { name: 'Bajaj Finserv', sector: 'Finance', basePrice: 1580 },
+  'M&M.NS': { name: 'Mahindra & Mahindra', sector: 'Automobile', basePrice: 1685 },
+  'INDUSINDBK.NS': { name: 'IndusInd Bank', sector: 'Banking', basePrice: 1420 },
+  'TATACONSUM.NS': { name: 'Tata Consumer Products', sector: 'FMCG', basePrice: 1085 },
+  'ADANIGREEN.NS': { name: 'Adani Green Energy', sector: 'Power', basePrice: 1850 },
+  
+  // === NIFTY NEXT 50 ===
+  'SIEMENS.NS': { name: 'Siemens India', sector: 'Capital Goods', basePrice: 4850 },
+  'HAVELLS.NS': { name: 'Havells India', sector: 'Consumer Durables', basePrice: 1380 },
+  'PIDILITIND.NS': { name: 'Pidilite Industries', sector: 'Chemicals', basePrice: 2650 },
+  'GODREJCP.NS': { name: 'Godrej Consumer Products', sector: 'FMCG', basePrice: 1180 },
+  'DABUR.NS': { name: 'Dabur India', sector: 'FMCG', basePrice: 545 },
+  'MARICO.NS': { name: 'Marico', sector: 'FMCG', basePrice: 585 },
+  'BERGEPAINT.NS': { name: 'Berger Paints', sector: 'Paints', basePrice: 545 },
+  'DLF.NS': { name: 'DLF Ltd', sector: 'Real Estate', basePrice: 785 },
+  'INDIGO.NS': { name: 'InterGlobe Aviation', sector: 'Aviation', basePrice: 3250 },
+  'SHREECEM.NS': { name: 'Shree Cement', sector: 'Cement', basePrice: 24500 },
+  'AMBUJACEM.NS': { name: 'Ambuja Cements', sector: 'Cement', basePrice: 585 },
+  'ACC.NS': { name: 'ACC Ltd', sector: 'Cement', basePrice: 2180 },
+  'BANKBARODA.NS': { name: 'Bank of Baroda', sector: 'Banking', basePrice: 245 },
+  'PNB.NS': { name: 'Punjab National Bank', sector: 'Banking', basePrice: 95 },
+  'CANBK.NS': { name: 'Canara Bank', sector: 'Banking', basePrice: 485 },
+  'UNIONBANK.NS': { name: 'Union Bank of India', sector: 'Banking', basePrice: 125 },
+  'IDFCFIRSTB.NS': { name: 'IDFC First Bank', sector: 'Banking', basePrice: 78 },
+  'FEDERALBNK.NS': { name: 'Federal Bank', sector: 'Banking', basePrice: 148 },
+  'BANDHANBNK.NS': { name: 'Bandhan Bank', sector: 'Banking', basePrice: 215 },
+  'RBLBANK.NS': { name: 'RBL Bank', sector: 'Banking', basePrice: 185 },
+  'YESBANK.NS': { name: 'Yes Bank', sector: 'Banking', basePrice: 22 },
+  'AUBANK.NS': { name: 'AU Small Finance Bank', sector: 'Banking', basePrice: 685 },
+  'ICICIPRULI.NS': { name: 'ICICI Prudential Life', sector: 'Insurance', basePrice: 545 },
+  'ICICIGI.NS': { name: 'ICICI Lombard', sector: 'Insurance', basePrice: 1380 },
+  'NAUKRI.NS': { name: 'Info Edge India', sector: 'Internet', basePrice: 4850 },
+  'ZOMATO.NS': { name: 'Zomato', sector: 'Food Tech', basePrice: 185 },
+  'PAYTM.NS': { name: 'Paytm (One97)', sector: 'Fintech', basePrice: 485 },
+  'NYKAA.NS': { name: 'Nykaa (FSN E-Commerce)', sector: 'E-Commerce', basePrice: 168 },
+  'DMART.NS': { name: 'Avenue Supermarts (DMart)', sector: 'Retail', basePrice: 3850 },
+  'POLICYBZR.NS': { name: 'PB Fintech (Policybazaar)', sector: 'Fintech', basePrice: 485 },
+  
+  // === IT SECTOR ===
+  'LTIM.NS': { name: 'LTIMindtree', sector: 'IT', basePrice: 5250 },
+  'MPHASIS.NS': { name: 'Mphasis', sector: 'IT', basePrice: 2380 },
+  'COFORGE.NS': { name: 'Coforge', sector: 'IT', basePrice: 5850 },
+  'PERSISTENT.NS': { name: 'Persistent Systems', sector: 'IT', basePrice: 4250 },
+  'LTTS.NS': { name: 'L&T Technology Services', sector: 'IT', basePrice: 4650 },
+  'TATAELXSI.NS': { name: 'Tata Elxsi', sector: 'IT', basePrice: 6850 },
+  'MINDTREE.NS': { name: 'Mindtree', sector: 'IT', basePrice: 4180 },
+  'CYIENT.NS': { name: 'Cyient', sector: 'IT', basePrice: 1850 },
+  'HAPPSTMNDS.NS': { name: 'Happiest Minds', sector: 'IT', basePrice: 785 },
+  'SONATSOFTW.NS': { name: 'Sonata Software', sector: 'IT', basePrice: 585 },
+  'ROUTE.NS': { name: 'Route Mobile', sector: 'IT', basePrice: 1650 },
+  'MASTEK.NS': { name: 'Mastek', sector: 'IT', basePrice: 2450 },
+  'BIRLASOFT.NS': { name: 'Birlasoft', sector: 'IT', basePrice: 585 },
+  'KPITTECH.NS': { name: 'KPIT Technologies', sector: 'IT', basePrice: 1280 },
+  'ZENSAR.NS': { name: 'Zensar Technologies', sector: 'IT', basePrice: 485 },
+  'NIITLTD.NS': { name: 'NIIT Ltd', sector: 'IT', basePrice: 385 },
+  'HEXAWARE.NS': { name: 'Hexaware Technologies', sector: 'IT', basePrice: 685 },
+  
+  // === PHARMA & HEALTHCARE ===
+  'LUPIN.NS': { name: 'Lupin', sector: 'Pharma', basePrice: 1285 },
+  'AUROPHARMA.NS': { name: 'Aurobindo Pharma', sector: 'Pharma', basePrice: 985 },
+  'BIOCON.NS': { name: 'Biocon', sector: 'Pharma', basePrice: 285 },
+  'TORNTPHARM.NS': { name: 'Torrent Pharma', sector: 'Pharma', basePrice: 2250 },
+  'ALKEM.NS': { name: 'Alkem Labs', sector: 'Pharma', basePrice: 4850 },
+  'ZYDUSLIFE.NS': { name: 'Zydus Lifesciences', sector: 'Pharma', basePrice: 685 },
+  'IPCALAB.NS': { name: 'IPCA Labs', sector: 'Pharma', basePrice: 1085 },
+  'LAURUSLABS.NS': { name: 'Laurus Labs', sector: 'Pharma', basePrice: 385 },
+  'GLENMARK.NS': { name: 'Glenmark Pharma', sector: 'Pharma', basePrice: 985 },
+  'NATCOPHARM.NS': { name: 'Natco Pharma', sector: 'Pharma', basePrice: 785 },
+  'ABBOTINDIA.NS': { name: 'Abbott India', sector: 'Pharma', basePrice: 24500 },
+  'GLAXO.NS': { name: 'GlaxoSmithKline Pharma', sector: 'Pharma', basePrice: 1650 },
+  'PFIZER.NS': { name: 'Pfizer India', sector: 'Pharma', basePrice: 4250 },
+  'SANOFI.NS': { name: 'Sanofi India', sector: 'Pharma', basePrice: 6850 },
+  'MAXHEALTH.NS': { name: 'Max Healthcare', sector: 'Healthcare', basePrice: 685 },
+  'FORTIS.NS': { name: 'Fortis Healthcare', sector: 'Healthcare', basePrice: 385 },
+  'METROPOLIS.NS': { name: 'Metropolis Healthcare', sector: 'Healthcare', basePrice: 1650 },
+  'LALPATHLAB.NS': { name: 'Dr Lal PathLabs', sector: 'Healthcare', basePrice: 2250 },
+  'THYROCARE.NS': { name: 'Thyrocare Technologies', sector: 'Healthcare', basePrice: 585 },
+  
+  // === AUTOMOBILE & AUTO ANCILLARY ===
+  'ASHOKLEY.NS': { name: 'Ashok Leyland', sector: 'Automobile', basePrice: 185 },
+  'TVSMOTOR.NS': { name: 'TVS Motor', sector: 'Automobile', basePrice: 1850 },
+  'ESCORTS.NS': { name: 'Escorts Kubota', sector: 'Automobile', basePrice: 2850 },
+  'MOTHERSON.NS': { name: 'Motherson Sumi', sector: 'Auto Ancillary', basePrice: 125 },
+  'BOSCHLTD.NS': { name: 'Bosch', sector: 'Auto Ancillary', basePrice: 18500 },
+  'MRF.NS': { name: 'MRF Ltd', sector: 'Tyres', basePrice: 125000 },
+  'APOLLOTYRE.NS': { name: 'Apollo Tyres', sector: 'Tyres', basePrice: 385 },
+  'BALKRISIND.NS': { name: 'Balkrishna Industries', sector: 'Tyres', basePrice: 2450 },
+  'CEAT.NS': { name: 'CEAT Ltd', sector: 'Tyres', basePrice: 2180 },
+  'EXIDEIND.NS': { name: 'Exide Industries', sector: 'Auto Ancillary', basePrice: 285 },
+  'AMARAJABAT.NS': { name: 'Amara Raja Batteries', sector: 'Auto Ancillary', basePrice: 685 },
+  'BHARATFORG.NS': { name: 'Bharat Forge', sector: 'Auto Ancillary', basePrice: 1180 },
+  'SUNDRMFAST.NS': { name: 'Sundram Fasteners', sector: 'Auto Ancillary', basePrice: 985 },
+  'ENDURANCE.NS': { name: 'Endurance Technologies', sector: 'Auto Ancillary', basePrice: 1650 },
+  'SONACOMS.NS': { name: 'Sona BLW Precision', sector: 'Auto Ancillary', basePrice: 585 },
+  
+  // === FMCG ===
+  'COLPAL.NS': { name: 'Colgate Palmolive', sector: 'FMCG', basePrice: 2450 },
+  'EMAMILTD.NS': { name: 'Emami', sector: 'FMCG', basePrice: 485 },
+  'TATACONSUM.NS': { name: 'Tata Consumer', sector: 'FMCG', basePrice: 1085 },
+  'VBL.NS': { name: 'Varun Beverages', sector: 'FMCG', basePrice: 1450 },
+  'UBL.NS': { name: 'United Breweries', sector: 'FMCG', basePrice: 1650 },
+  'MCDOWELL-N.NS': { name: 'United Spirits', sector: 'FMCG', basePrice: 1180 },
+  'RADICO.NS': { name: 'Radico Khaitan', sector: 'FMCG', basePrice: 1285 },
+  'JYOTHYLAB.NS': { name: 'Jyothy Labs', sector: 'FMCG', basePrice: 385 },
+  'BAJAJCON.NS': { name: 'Bajaj Consumer Care', sector: 'FMCG', basePrice: 185 },
+  'ZYDUSWELL.NS': { name: 'Zydus Wellness', sector: 'FMCG', basePrice: 1650 },
+  
+  // === POWER & ENERGY ===
+  'TATAPOWER.NS': { name: 'Tata Power', sector: 'Power', basePrice: 285 },
+  'ADANIPOWER.NS': { name: 'Adani Power', sector: 'Power', basePrice: 385 },
+  'NHPC.NS': { name: 'NHPC', sector: 'Power', basePrice: 65 },
+  'SJVN.NS': { name: 'SJVN Ltd', sector: 'Power', basePrice: 85 },
+  'JSWENERGY.NS': { name: 'JSW Energy', sector: 'Power', basePrice: 485 },
+  'TORNTPOWER.NS': { name: 'Torrent Power', sector: 'Power', basePrice: 585 },
+  'CESC.NS': { name: 'CESC Ltd', sector: 'Power', basePrice: 115 },
+  'IEX.NS': { name: 'Indian Energy Exchange', sector: 'Power', basePrice: 145 },
+  'GAIL.NS': { name: 'GAIL India', sector: 'Oil & Gas', basePrice: 145 },
+  'IOC.NS': { name: 'Indian Oil Corp', sector: 'Oil & Gas', basePrice: 145 },
+  'HINDPETRO.NS': { name: 'HPCL', sector: 'Oil & Gas', basePrice: 385 },
+  'PETRONET.NS': { name: 'Petronet LNG', sector: 'Oil & Gas', basePrice: 285 },
+  'MGL.NS': { name: 'Mahanagar Gas', sector: 'Oil & Gas', basePrice: 1180 },
+  'IGL.NS': { name: 'Indraprastha Gas', sector: 'Oil & Gas', basePrice: 485 },
+  'GSPL.NS': { name: 'Gujarat State Petronet', sector: 'Oil & Gas', basePrice: 285 },
+  'ATGL.NS': { name: 'Adani Total Gas', sector: 'Oil & Gas', basePrice: 685 },
+  
+  // === METALS & MINING ===
+  'VEDL.NS': { name: 'Vedanta', sector: 'Metals', basePrice: 285 },
+  'NMDC.NS': { name: 'NMDC', sector: 'Mining', basePrice: 185 },
+  'SAIL.NS': { name: 'SAIL', sector: 'Steel', basePrice: 115 },
+  'JINDALSTEL.NS': { name: 'Jindal Steel & Power', sector: 'Steel', basePrice: 685 },
+  'NATIONALUM.NS': { name: 'National Aluminium', sector: 'Metals', basePrice: 115 },
+  'MOIL.NS': { name: 'MOIL Ltd', sector: 'Mining', basePrice: 285 },
+  'WELCORP.NS': { name: 'Welspun Corp', sector: 'Steel', basePrice: 485 },
+  'RATNAMANI.NS': { name: 'Ratnamani Metals', sector: 'Steel', basePrice: 2850 },
+  'APLAPOLLO.NS': { name: 'APL Apollo Tubes', sector: 'Steel', basePrice: 1450 },
+  
+  // === CAPITAL GOODS & INFRASTRUCTURE ===
+  'ABB.NS': { name: 'ABB India', sector: 'Capital Goods', basePrice: 4850 },
+  'BHEL.NS': { name: 'BHEL', sector: 'Capital Goods', basePrice: 185 },
+  'CUMMINSIND.NS': { name: 'Cummins India', sector: 'Capital Goods', basePrice: 2250 },
+  'THERMAX.NS': { name: 'Thermax', sector: 'Capital Goods', basePrice: 2850 },
+  'GRINDWELL.NS': { name: 'Grindwell Norton', sector: 'Capital Goods', basePrice: 1850 },
+  'AIAENG.NS': { name: 'AIA Engineering', sector: 'Capital Goods', basePrice: 3250 },
+  'KEC.NS': { name: 'KEC International', sector: 'Infrastructure', basePrice: 685 },
+  'KALPATPOWR.NS': { name: 'Kalpataru Projects', sector: 'Infrastructure', basePrice: 585 },
+  'IRB.NS': { name: 'IRB Infra', sector: 'Infrastructure', basePrice: 48 },
+  'PNCINFRA.NS': { name: 'PNC Infratech', sector: 'Infrastructure', basePrice: 385 },
+  'NCC.NS': { name: 'NCC Ltd', sector: 'Construction', basePrice: 185 },
+  'HCC.NS': { name: 'HCC', sector: 'Construction', basePrice: 28 },
+  'NBCC.NS': { name: 'NBCC India', sector: 'Construction', basePrice: 85 },
+  
+  // === REAL ESTATE ===
+  'GODREJPROP.NS': { name: 'Godrej Properties', sector: 'Real Estate', basePrice: 2250 },
+  'OBEROIRLTY.NS': { name: 'Oberoi Realty', sector: 'Real Estate', basePrice: 1450 },
+  'PRESTIGE.NS': { name: 'Prestige Estates', sector: 'Real Estate', basePrice: 785 },
+  'BRIGADE.NS': { name: 'Brigade Enterprises', sector: 'Real Estate', basePrice: 685 },
+  'SOBHA.NS': { name: 'Sobha Ltd', sector: 'Real Estate', basePrice: 785 },
+  'PHOENIXLTD.NS': { name: 'Phoenix Mills', sector: 'Real Estate', basePrice: 1650 },
+  'LODHA.NS': { name: 'Macrotech Developers', sector: 'Real Estate', basePrice: 1085 },
+  'SUNTECK.NS': { name: 'Sunteck Realty', sector: 'Real Estate', basePrice: 485 },
+  
+  // === CONSUMER DURABLES ===
+  'VOLTAS.NS': { name: 'Voltas', sector: 'Consumer Durables', basePrice: 1085 },
+  'BLUESTARCO.NS': { name: 'Blue Star', sector: 'Consumer Durables', basePrice: 1285 },
+  'WHIRLPOOL.NS': { name: 'Whirlpool India', sector: 'Consumer Durables', basePrice: 1450 },
+  'CROMPTON.NS': { name: 'Crompton Greaves CE', sector: 'Consumer Durables', basePrice: 385 },
+  'VGUARD.NS': { name: 'V-Guard Industries', sector: 'Consumer Durables', basePrice: 385 },
+  'SYMPHONY.NS': { name: 'Symphony', sector: 'Consumer Durables', basePrice: 1085 },
+  'RAJESHEXPO.NS': { name: 'Rajesh Exports', sector: 'Consumer Goods', basePrice: 485 },
+  'KALYAN.NS': { name: 'Kalyan Jewellers', sector: 'Consumer Goods', basePrice: 385 },
+  'BATAINDIA.NS': { name: 'Bata India', sector: 'Consumer Goods', basePrice: 1450 },
+  'RELAXO.NS': { name: 'Relaxo Footwears', sector: 'Consumer Goods', basePrice: 785 },
+  'PAGEIND.NS': { name: 'Page Industries', sector: 'Consumer Goods', basePrice: 38500 },
+  'TRENT.NS': { name: 'Trent Ltd', sector: 'Retail', basePrice: 3850 },
+  'SHOPERSTOP.NS': { name: 'Shoppers Stop', sector: 'Retail', basePrice: 785 },
+  
+  // === CHEMICALS ===
+  'SRF.NS': { name: 'SRF Ltd', sector: 'Chemicals', basePrice: 2450 },
+  'ATUL.NS': { name: 'Atul Ltd', sector: 'Chemicals', basePrice: 6850 },
+  'DEEPAKNI.NS': { name: 'Deepak Nitrite', sector: 'Chemicals', basePrice: 2180 },
+  'NAVINFLUOR.NS': { name: 'Navin Fluorine', sector: 'Chemicals', basePrice: 3850 },
+  'CLEAN.NS': { name: 'Clean Science', sector: 'Chemicals', basePrice: 1450 },
+  'FINEORG.NS': { name: 'Fine Organic', sector: 'Chemicals', basePrice: 4850 },
+  'ALKYLAMINE.NS': { name: 'Alkyl Amines', sector: 'Chemicals', basePrice: 2250 },
+  'AARTIIND.NS': { name: 'Aarti Industries', sector: 'Chemicals', basePrice: 585 },
+  'GALAXYSURF.NS': { name: 'Galaxy Surfactants', sector: 'Chemicals', basePrice: 2850 },
+  'SUDARSCHEM.NS': { name: 'Sudarshan Chemicals', sector: 'Chemicals', basePrice: 485 },
+  
+  // === TEXTILES ===
+  'RAYMOND.NS': { name: 'Raymond', sector: 'Textiles', basePrice: 1650 },
+  'ARVIND.NS': { name: 'Arvind Ltd', sector: 'Textiles', basePrice: 385 },
+  'WELSPUNIND.NS': { name: 'Welspun India', sector: 'Textiles', basePrice: 145 },
+  'TRIDENT.NS': { name: 'Trident Ltd', sector: 'Textiles', basePrice: 35 },
+  'KPR.NS': { name: 'KPR Mill', sector: 'Textiles', basePrice: 785 },
+  'GOKALDAS.NS': { name: 'Gokaldas Exports', sector: 'Textiles', basePrice: 785 },
+  
+  // === MEDIA & ENTERTAINMENT ===
+  'PVRINOX.NS': { name: 'PVR INOX', sector: 'Media', basePrice: 1450 },
+  'ZEEL.NS': { name: 'Zee Entertainment', sector: 'Media', basePrice: 185 },
+  'SUNTV.NS': { name: 'Sun TV Network', sector: 'Media', basePrice: 585 },
+  'NETWORK18.NS': { name: 'Network18', sector: 'Media', basePrice: 85 },
+  'TV18BRDCST.NS': { name: 'TV18 Broadcast', sector: 'Media', basePrice: 45 },
+  
+  // === TELECOM ===
+  'IDEA.NS': { name: 'Vodafone Idea', sector: 'Telecom', basePrice: 12 },
+  'TATACOMM.NS': { name: 'Tata Communications', sector: 'Telecom', basePrice: 1850 },
+  'INDUSTOWER.NS': { name: 'Indus Towers', sector: 'Telecom', basePrice: 285 },
+  
+  // === LOGISTICS & TRANSPORT ===
+  'DELHIVERY.NS': { name: 'Delhivery', sector: 'Logistics', basePrice: 385 },
+  'BLUEDART.NS': { name: 'Blue Dart Express', sector: 'Logistics', basePrice: 6850 },
+  'CONCOR.NS': { name: 'Container Corp', sector: 'Logistics', basePrice: 685 },
+  'VRL.NS': { name: 'VRL Logistics', sector: 'Logistics', basePrice: 585 },
+  'MAHLOG.NS': { name: 'Mahindra Logistics', sector: 'Logistics', basePrice: 385 },
+  'GATEWAY.NS': { name: 'Gateway Distriparks', sector: 'Logistics', basePrice: 85 },
+  'ALLCARGO.NS': { name: 'Allcargo Logistics', sector: 'Logistics', basePrice: 385 },
+  
+  // === NBFC & FINANCIAL SERVICES ===
+  'BAJAJHLDNG.NS': { name: 'Bajaj Holdings', sector: 'Finance', basePrice: 7850 },
+  'CHOLAFIN.NS': { name: 'Cholamandalam Finance', sector: 'Finance', basePrice: 1180 },
+  'MUTHOOTFIN.NS': { name: 'Muthoot Finance', sector: 'Finance', basePrice: 1450 },
+  'MANAPPURAM.NS': { name: 'Manappuram Finance', sector: 'Finance', basePrice: 185 },
+  'L&TFH.NS': { name: 'L&T Finance Holdings', sector: 'Finance', basePrice: 145 },
+  'SBICARD.NS': { name: 'SBI Cards', sector: 'Finance', basePrice: 785 },
+  'SHRIRAMFIN.NS': { name: 'Shriram Finance', sector: 'Finance', basePrice: 2250 },
+  'M&MFIN.NS': { name: 'M&M Financial Services', sector: 'Finance', basePrice: 285 },
+  'POONAWALLA.NS': { name: 'Poonawalla Fincorp', sector: 'Finance', basePrice: 385 },
+  'CREDITACC.NS': { name: 'CreditAccess Grameen', sector: 'Finance', basePrice: 1450 },
+  'IIFL.NS': { name: 'IIFL Finance', sector: 'Finance', basePrice: 485 },
+  
+  // === DEFENCE & AEROSPACE ===
+  'HAL.NS': { name: 'Hindustan Aeronautics', sector: 'Defence', basePrice: 3850 },
+  'BEL.NS': { name: 'Bharat Electronics', sector: 'Defence', basePrice: 185 },
+  'BEML.NS': { name: 'BEML', sector: 'Defence', basePrice: 2850 },
+  'BDL.NS': { name: 'Bharat Dynamics', sector: 'Defence', basePrice: 1085 },
+  'COCHINSHIP.NS': { name: 'Cochin Shipyard', sector: 'Defence', basePrice: 785 },
+  'GRSE.NS': { name: 'Garden Reach Shipbuilders', sector: 'Defence', basePrice: 785 },
+  'MAZAGON.NS': { name: 'Mazagon Dock', sector: 'Defence', basePrice: 2450 },
+  
+  // === PSU STOCKS ===
+  'IRCTC.NS': { name: 'IRCTC', sector: 'Travel', basePrice: 785 },
+  'IRFC.NS': { name: 'Indian Railway Finance', sector: 'Finance', basePrice: 145 },
+  'RVNL.NS': { name: 'Rail Vikas Nigam', sector: 'Infrastructure', basePrice: 185 },
+  'RECLTD.NS': { name: 'REC Ltd', sector: 'Finance', basePrice: 485 },
+  'PFC.NS': { name: 'Power Finance Corp', sector: 'Finance', basePrice: 385 },
+  'HUDCO.NS': { name: 'HUDCO', sector: 'Finance', basePrice: 185 },
+  'HFCL.NS': { name: 'HFCL Ltd', sector: 'Telecom', basePrice: 85 },
+  'HINDCOPPER.NS': { name: 'Hindustan Copper', sector: 'Metals', basePrice: 185 },
+  'OFSS.NS': { name: 'Oracle Financial Services', sector: 'IT', basePrice: 8850 },
+  
+  // === SUGAR ===
+  'BALRAMCHIN.NS': { name: 'Balrampur Chini', sector: 'Sugar', basePrice: 385 },
+  'RENUKA.NS': { name: 'Shree Renuka Sugars', sector: 'Sugar', basePrice: 45 },
+  'DWARIKESH.NS': { name: 'Dwarikesh Sugar', sector: 'Sugar', basePrice: 85 },
+  'TRIVENI.NS': { name: 'Triveni Engineering', sector: 'Sugar', basePrice: 385 },
+  
+  // === FERTILIZERS & AGRI ===
+  'COROMANDEL.NS': { name: 'Coromandel International', sector: 'Fertilizers', basePrice: 1180 },
+  'CHAMBLFERT.NS': { name: 'Chambal Fertilizers', sector: 'Fertilizers', basePrice: 385 },
+  'GNFC.NS': { name: 'GNFC', sector: 'Fertilizers', basePrice: 585 },
+  'GSFC.NS': { name: 'GSFC', sector: 'Fertilizers', basePrice: 185 },
+  'RCF.NS': { name: 'Rashtriya Chemicals', sector: 'Fertilizers', basePrice: 145 },
+  'PIIND.NS': { name: 'PI Industries', sector: 'Agrochemicals', basePrice: 3450 },
+  'UPL.NS': { name: 'UPL Ltd', sector: 'Agrochemicals', basePrice: 485 },
+  'BAYER.NS': { name: 'Bayer CropScience', sector: 'Agrochemicals', basePrice: 5850 },
+  'RALLIS.NS': { name: 'Rallis India', sector: 'Agrochemicals', basePrice: 285 },
+  
+  // === PAPER & PACKAGING ===
+  'JKPAPER.NS': { name: 'JK Paper', sector: 'Paper', basePrice: 385 },
+  'TNPL.NS': { name: 'Tamil Nadu Newsprint', sector: 'Paper', basePrice: 285 },
+  'HUHTAMAKI.NS': { name: 'Huhtamaki India', sector: 'Packaging', basePrice: 285 },
+  'UFLEX.NS': { name: 'Uflex', sector: 'Packaging', basePrice: 485 },
+  
+  // === GEMS & JEWELLERY ===
+  'TITAN.NS': { name: 'Titan', sector: 'Jewellery', basePrice: 3180 },
+  'TANLA.NS': { name: 'Tanla Platforms', sector: 'IT', basePrice: 985 },
+  'PCJEWELLER.NS': { name: 'PC Jeweller', sector: 'Jewellery', basePrice: 85 },
+  
+  // === EDUCATION ===
+  'ABORETUM.NS': { name: 'Aptech', sector: 'Education', basePrice: 285 },
+  
+  // === HOTELS & TRAVEL ===
+  'INDHOTEL.NS': { name: 'Indian Hotels', sector: 'Hotels', basePrice: 485 },
+  'LEMONTRE.NS': { name: 'Lemon Tree Hotels', sector: 'Hotels', basePrice: 115 },
+  'CHALET.NS': { name: 'Chalet Hotels', sector: 'Hotels', basePrice: 685 },
+  'MAHINDCIE.NS': { name: 'Mahindra CIE', sector: 'Auto Ancillary', basePrice: 485 },
+  'EASEMYTRIP.NS': { name: 'Easy Trip Planners', sector: 'Travel', basePrice: 35 },
+  'THOMASCOOK.NS': { name: 'Thomas Cook India', sector: 'Travel', basePrice: 145 },
+  'YATRA.NS': { name: 'Yatra Online', sector: 'Travel', basePrice: 115 },
 };
 
 const INDICES = {
+  // Major Indices
   '^NSEI': { name: 'NIFTY 50', basePrice: 22450 },
   '^BSESN': { name: 'SENSEX', basePrice: 73850 },
   '^NSEBANK': { name: 'NIFTY Bank', basePrice: 47250 },
   '^CNXIT': { name: 'NIFTY IT', basePrice: 34580 },
+  // Sectoral Indices
+  '^CNXPHARMA': { name: 'NIFTY Pharma', basePrice: 18250 },
+  '^CNXAUTO': { name: 'NIFTY Auto', basePrice: 19850 },
+  '^CNXFMCG': { name: 'NIFTY FMCG', basePrice: 52450 },
+  '^CNXMETAL': { name: 'NIFTY Metal', basePrice: 7850 },
+  '^CNXREALTY': { name: 'NIFTY Realty', basePrice: 785 },
+  '^CNXENERGY': { name: 'NIFTY Energy', basePrice: 32450 },
+  '^CNXINFRA': { name: 'NIFTY Infra', basePrice: 7250 },
+  '^CNXPSUBANK': { name: 'NIFTY PSU Bank', basePrice: 6250 },
+  '^CNXFIN': { name: 'NIFTY Financial Services', basePrice: 21450 },
+  '^CNXMEDIA': { name: 'NIFTY Media', basePrice: 1850 },
+  // Broader Indices
+  '^NSMIDCP': { name: 'NIFTY Midcap 50', basePrice: 12850 },
+  '^NSEMDCP100': { name: 'NIFTY Midcap 100', basePrice: 45250 },
+  '^NSESMLCP': { name: 'NIFTY Smallcap 100', basePrice: 15450 },
+  '^NIFTY500': { name: 'NIFTY 500', basePrice: 19850 },
 };
 
 // ============================================================================
@@ -82,6 +393,59 @@ const INDICES = {
 
 const simulatedPrices = new Map();
 const priceHistory = new Map();
+
+// Market status - Indian market hours (IST)
+function isMarketOpen() {
+  const now = new Date();
+  
+  // Convert to IST (UTC + 5:30)
+  const istOffset = 5.5 * 60; // 5 hours 30 minutes in minutes
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const istMinutes = utcMinutes + istOffset;
+  
+  // Handle day overflow
+  let istHour = Math.floor(istMinutes / 60) % 24;
+  let istMinute = istMinutes % 60;
+  
+  // Get day in IST
+  let istDay = now.getUTCDay();
+  if (istMinutes >= 24 * 60) {
+    istDay = (istDay + 1) % 7;
+  }
+  
+  // Weekend check (Saturday = 6, Sunday = 0)
+  if (istDay === 0 || istDay === 6) {
+    return { isOpen: false, reason: 'Weekend - Market Closed', nextOpen: 'Monday 9:15 AM IST' };
+  }
+  
+  // Market hours: 9:15 AM - 3:30 PM IST
+  const marketOpenMinutes = 9 * 60 + 15;  // 9:15 AM
+  const marketCloseMinutes = 15 * 60 + 30; // 3:30 PM
+  const currentISTMinutes = istHour * 60 + istMinute;
+  
+  // Pre-market: 9:00 AM - 9:15 AM
+  const preMarketOpen = 9 * 60;
+  
+  if (currentISTMinutes < preMarketOpen) {
+    return { isOpen: false, reason: 'Pre-Market - Opening at 9:15 AM IST', nextOpen: 'Today 9:15 AM IST' };
+  }
+  
+  if (currentISTMinutes >= preMarketOpen && currentISTMinutes < marketOpenMinutes) {
+    return { isOpen: false, reason: 'Pre-Market Session', nextOpen: 'Today 9:15 AM IST', preMarket: true };
+  }
+  
+  if (currentISTMinutes >= marketOpenMinutes && currentISTMinutes < marketCloseMinutes) {
+    return { isOpen: true, reason: 'Market Open', session: 'Regular Trading' };
+  }
+  
+  // Post-market: 3:30 PM - 4:00 PM
+  const postMarketClose = 16 * 60;
+  if (currentISTMinutes >= marketCloseMinutes && currentISTMinutes < postMarketClose) {
+    return { isOpen: false, reason: 'Post-Market Session', nextOpen: 'Tomorrow 9:15 AM IST', postMarket: true };
+  }
+  
+  return { isOpen: false, reason: 'Market Closed', nextOpen: 'Tomorrow 9:15 AM IST' };
+}
 
 function initializeSimulatedPrices() {
   const allStocks = { ...INDIAN_STOCKS, ...INDICES };
@@ -167,6 +531,13 @@ function generateHistoricalData(basePrice, symbol, days = 365) {
 }
 
 function updateSimulatedPrices() {
+  const marketStatus = isMarketOpen();
+  
+  // Only update prices during market hours
+  if (!marketStatus.isOpen) {
+    return; // Don't update prices when market is closed
+  }
+  
   simulatedPrices.forEach((stockData, symbol) => {
     const volatility = getVolatility(symbol);
     const tickSize = stockData.price * volatility * 0.001;
@@ -227,18 +598,36 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
+  const marketStatus = isMarketOpen();
   res.json({ 
     status: 'ok', 
     service: 'Stock Market Server',
     port: PORT,
     timestamp: new Date().toISOString(),
-    stocksAvailable: simulatedPrices.size 
+    stocksAvailable: simulatedPrices.size,
+    marketStatus: marketStatus
+  });
+});
+
+// Market Status Endpoint
+app.get('/api/market/status', (req, res) => {
+  const marketStatus = isMarketOpen();
+  res.json({ 
+    success: true, 
+    data: {
+      ...marketStatus,
+      timezone: 'IST (UTC+5:30)',
+      exchange: 'NSE/BSE',
+      tradingHours: '9:15 AM - 3:30 PM IST',
+      serverTime: new Date().toISOString()
+    }
   });
 });
 
 app.get('/api/stocks', (req, res) => {
   const stocks = Array.from(simulatedPrices.values()).filter(s => s.sector !== 'Index');
-  res.json({ success: true, data: stocks, count: stocks.length });
+  const marketStatus = isMarketOpen();
+  res.json({ success: true, data: stocks, count: stocks.length, marketStatus: marketStatus });
 });
 
 app.get('/api/indices', (req, res) => {
@@ -388,6 +777,7 @@ app.get('/api/market/sectors', (req, res) => {
 app.get('/api/market/overview', (req, res) => {
   const indices = Array.from(simulatedPrices.values()).filter(s => s.sector === 'Index');
   const stocks = Array.from(simulatedPrices.values()).filter(s => s.sector !== 'Index');
+  const marketStatus = isMarketOpen();
   
   const advancing = stocks.filter(s => s.changePercent > 0).length;
   const declining = stocks.filter(s => s.changePercent < 0).length;
@@ -402,22 +792,10 @@ app.get('/api/market/overview', (req, res) => {
       topGainer: stocks.sort((a, b) => b.changePercent - a.changePercent)[0],
       topLoser: stocks.sort((a, b) => a.changePercent - b.changePercent)[0],
       lastUpdated: new Date().toISOString(),
-      marketStatus: getMarketStatus(),
+      marketStatus: marketStatus,
     }
   });
 });
-
-function getMarketStatus() {
-  const now = new Date();
-  const day = now.getDay();
-  const time = now.getHours() * 60 + now.getMinutes();
-  
-  if (day === 0 || day === 6) return { status: 'closed', reason: 'Weekend' };
-  if (time >= 540 && time < 555) return { status: 'pre-market', reason: 'Pre-market session' };
-  if (time >= 555 && time < 930) return { status: 'open', reason: 'Regular trading hours' };
-  if (time >= 930 && time < 960) return { status: 'post-market', reason: 'Post-market session' };
-  return { status: 'closed', reason: 'Outside trading hours' };
-}
 
 // ============================================================================
 // START SERVER
