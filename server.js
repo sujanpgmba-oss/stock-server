@@ -1,6 +1,9 @@
 /**
  * Stock Market Backend Server for Render Deployment
  * Provides simulated Indian stock market data
+ * 
+ * SIMULATION MODE: Works 24/7 regardless of market hours
+ * This is a PRACTICE/PAPER TRADING server for educational purposes
  */
 
 const express = require('express');
@@ -10,10 +13,21 @@ const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// ============================================================================
+// SIMULATION SETTINGS (Can be controlled via API)
+// ============================================================================
+let simulationSettings = {
+  isActive: true,              // Simulation always active (24/7)
+  speed: 1,                    // 1x = normal, 2x = faster price updates, 0.5x = slower
+  volatilityMultiplier: 1,     // Higher = more price movement
+  updateInterval: 2000,        // Base interval in ms (2 seconds)
+  alwaysOpen: true,            // Override market hours - ALWAYS OPEN for practice
+};
+
 // Middleware - Allow all origins for CORS (adjust for production)
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
@@ -396,8 +410,20 @@ const INDICES = {
 const simulatedPrices = new Map();
 const priceHistory = new Map();
 
-// Market status - Indian market hours (IST)
+// Market status - For SIMULATED mode, always returns open when alwaysOpen is true
 function isMarketOpen() {
+  // SIMULATION MODE: Always open for practice/paper trading
+  if (simulationSettings.alwaysOpen) {
+    return { 
+      isOpen: true, 
+      reason: 'Simulation Mode - Always Open', 
+      session: 'Practice Trading',
+      isSimulated: true,
+      speed: simulationSettings.speed
+    };
+  }
+  
+  // Below is real market hours logic (only used if alwaysOpen is false)
   const now = new Date();
   
   // Convert to IST (UTC + 5:30)
@@ -535,13 +561,17 @@ function generateHistoricalData(basePrice, symbol, days = 365) {
 function updateSimulatedPrices() {
   const marketStatus = isMarketOpen();
   
-  // Only update prices during market hours
-  if (!marketStatus.isOpen) {
-    return; // Don't update prices when market is closed
+  // SIMULATION MODE: Always update prices (24/7 practice trading)
+  // In simulated mode, we ignore real market hours
+  if (!marketStatus.isOpen && !simulationSettings.alwaysOpen) {
+    return; // Only skip if NOT in always-open simulation mode
   }
   
+  // Apply speed multiplier to volatility
+  const speedMultiplier = simulationSettings.speed * simulationSettings.volatilityMultiplier;
+  
   simulatedPrices.forEach((stockData, symbol) => {
-    const volatility = getVolatility(symbol);
+    const volatility = getVolatility(symbol) * speedMultiplier;
     const tickSize = stockData.price * volatility * 0.001;
     const change = (Math.random() - 0.5) * 2 * tickSize;
     const newPrice = Math.max(stockData.price + change, stockData.price * 0.5);
@@ -570,7 +600,16 @@ function updateSimulatedPrices() {
 }
 
 initializeSimulatedPrices();
-setInterval(updateSimulatedPrices, 2000);
+
+// Dynamic update interval based on simulation speed
+let updateIntervalId = null;
+function startPriceUpdates() {
+  if (updateIntervalId) clearInterval(updateIntervalId);
+  const interval = Math.max(500, simulationSettings.updateInterval / simulationSettings.speed);
+  updateIntervalId = setInterval(updateSimulatedPrices, interval);
+  console.log(`Price updates running every ${interval}ms (speed: ${simulationSettings.speed}x)`);
+}
+startPriceUpdates();
 
 // ============================================================================
 // API ENDPOINTS
@@ -579,10 +618,14 @@ setInterval(updateSimulatedPrices, 2000);
 app.get('/', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'Spark Stock Market API',
-    version: '1.0.0',
+    service: 'Spark Stock Market API - SIMULATION MODE',
+    version: '2.0.0',
+    mode: 'Paper Trading (24/7)',
+    simulationSettings: simulationSettings,
     endpoints: [
       'GET /api/health',
+      'GET /api/simulation/settings',
+      'PUT /api/simulation/settings',
       'GET /api/stocks',
       'GET /api/indices',
       'GET /api/stocks/:symbol',
@@ -599,15 +642,72 @@ app.get('/', (req, res) => {
   });
 });
 
+// ============================================================================
+// SIMULATION CONTROL ENDPOINTS
+// ============================================================================
+
+// Get simulation settings
+app.get('/api/simulation/settings', (req, res) => {
+  res.json({ 
+    success: true, 
+    data: simulationSettings,
+    description: {
+      isActive: 'Whether simulation is running',
+      speed: 'Price update speed multiplier (0.5x, 1x, 2x, 5x)',
+      volatilityMultiplier: 'Price volatility multiplier (higher = more movement)',
+      updateInterval: 'Base update interval in milliseconds',
+      alwaysOpen: 'If true, market is always open for practice trading'
+    }
+  });
+});
+
+// Update simulation settings
+app.put('/api/simulation/settings', (req, res) => {
+  const { speed, volatilityMultiplier, alwaysOpen, updateInterval } = req.body;
+  
+  if (speed !== undefined && speed > 0 && speed <= 10) {
+    simulationSettings.speed = speed;
+  }
+  if (volatilityMultiplier !== undefined && volatilityMultiplier > 0 && volatilityMultiplier <= 5) {
+    simulationSettings.volatilityMultiplier = volatilityMultiplier;
+  }
+  if (alwaysOpen !== undefined) {
+    simulationSettings.alwaysOpen = alwaysOpen;
+  }
+  if (updateInterval !== undefined && updateInterval >= 500 && updateInterval <= 10000) {
+    simulationSettings.updateInterval = updateInterval;
+  }
+  
+  // Restart price updates with new settings
+  startPriceUpdates();
+  
+  res.json({ 
+    success: true, 
+    message: 'Simulation settings updated',
+    data: simulationSettings 
+  });
+});
+
+// Reset simulation (reset all prices to base)
+app.post('/api/simulation/reset', (req, res) => {
+  initializeSimulatedPrices();
+  res.json({ 
+    success: true, 
+    message: 'Simulation reset - all prices restored to base values'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   const marketStatus = isMarketOpen();
   res.json({ 
     status: 'ok', 
-    service: 'Stock Market Server',
+    service: 'Stock Market Server - SIMULATION',
+    mode: 'Paper Trading (24/7)',
     port: PORT,
     timestamp: new Date().toISOString(),
     stocksAvailable: simulatedPrices.size,
-    marketStatus: marketStatus
+    marketStatus: marketStatus,
+    simulationSettings: simulationSettings
   });
 });
 
@@ -619,9 +719,11 @@ app.get('/api/market/status', (req, res) => {
     data: {
       ...marketStatus,
       timezone: 'IST (UTC+5:30)',
-      exchange: 'NSE/BSE',
-      tradingHours: '9:15 AM - 3:30 PM IST',
-      serverTime: new Date().toISOString()
+      exchange: 'NSE/BSE (Simulated)',
+      tradingHours: simulationSettings.alwaysOpen ? '24/7 Practice Mode' : '9:15 AM - 3:30 PM IST',
+      serverTime: new Date().toISOString(),
+      simulationMode: true,
+      simulationSettings: simulationSettings
     }
   });
 });
