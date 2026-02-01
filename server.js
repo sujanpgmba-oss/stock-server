@@ -23,6 +23,7 @@ let simulationSettings = {
   updateInterval: 2000,        // Base interval in ms (2 seconds)
   alwaysOpen: true,            // Override market hours - ALWAYS OPEN for practice
   priceTickSize: 0.05,         // Minimum price change increment (0.01, 0.05, 0.10, 0.50, 1.00)
+  maxTickMultiplier: 5,        // Max ticks per update (1-10). Price moves 1 to N ticks randomly for unpredictability
 };
 
 // Middleware - Allow all origins for CORS (adjust for production)
@@ -570,18 +571,28 @@ function updateSimulatedPrices() {
   
   // Apply speed multiplier to volatility
   const speedMultiplier = simulationSettings.speed * simulationSettings.volatilityMultiplier;
-  const tickSize = simulationSettings.priceTickSize; // Minimum price increment
+  const tickSize = simulationSettings.priceTickSize;
+  const maxTicks = simulationSettings.maxTickMultiplier;
   
   simulatedPrices.forEach((stockData, symbol) => {
     const volatility = getVolatility(symbol) * speedMultiplier;
-    const maxChange = stockData.price * volatility * 0.001;
-    const rawChange = (Math.random() - 0.5) * 2 * maxChange;
     
-    // Round change to nearest tick size
-    const roundedChange = Math.round(rawChange / tickSize) * tickSize;
-    // Ensure at least some movement (1 tick) sometimes
-    const change = Math.abs(roundedChange) < tickSize / 2 ? 
-      (Math.random() > 0.7 ? (Math.random() > 0.5 ? tickSize : -tickSize) : 0) : roundedChange;
+    // Random number of ticks (1 to maxTicks) for unpredictable movement
+    const numTicks = Math.floor(Math.random() * maxTicks) + 1;
+    const tickValue = tickSize * numTicks;
+    
+    // Determine direction based on volatility-weighted randomness
+    const directionBias = (Math.random() - 0.5) * 2; // -1 to 1
+    const volatilityFactor = 1 + volatility * 10; // Amplify based on sector volatility
+    
+    // Sometimes no movement (more realistic)
+    const movementChance = 0.7 + (volatility * 5); // Higher volatility = more likely to move
+    if (Math.random() > movementChance) {
+      return; // No price change this tick
+    }
+    
+    // Calculate change with random tick count
+    const change = directionBias > 0 ? tickValue : -tickValue;
     
     const newPrice = Math.max(stockData.price + change, stockData.price * 0.5);
     
@@ -672,7 +683,7 @@ app.get('/api/simulation/settings', (req, res) => {
 
 // Update simulation settings
 app.put('/api/simulation/settings', (req, res) => {
-  const { speed, volatilityMultiplier, alwaysOpen, updateInterval, priceTickSize } = req.body;
+  const { speed, volatilityMultiplier, alwaysOpen, updateInterval, priceTickSize, maxTickMultiplier } = req.body;
   
   if (speed !== undefined && speed > 0 && speed <= 10) {
     simulationSettings.speed = speed;
@@ -690,6 +701,10 @@ app.put('/api/simulation/settings', (req, res) => {
   const validTickSizes = [0.01, 0.05, 0.10, 0.25, 0.50, 1.00];
   if (priceTickSize !== undefined && validTickSizes.includes(priceTickSize)) {
     simulationSettings.priceTickSize = priceTickSize;
+  }
+  // Max tick multiplier: 1-10 (how many ticks max per update)
+  if (maxTickMultiplier !== undefined && maxTickMultiplier >= 1 && maxTickMultiplier <= 10) {
+    simulationSettings.maxTickMultiplier = Math.floor(maxTickMultiplier);
   }
   
   // Restart price updates with new settings
