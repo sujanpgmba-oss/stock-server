@@ -788,6 +788,37 @@ app.get('/api/stocks/:symbol/history', (req, res) => {
   const cutoffDate = Date.now() - daysToInclude * 24 * 60 * 60 * 1000;
   
   history = history.filter(candle => candle.timestamp >= cutoffDate);
+  
+  // Add or update the current price as the latest candle for real-time chart updates
+  const currentStock = simulatedPrices.get(searchSymbol) || simulatedPrices.get(symbol);
+  if (currentStock && history.length > 0) {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const lastCandle = history[history.length - 1];
+    
+    // If the last candle is from today, update it with current price
+    if (lastCandle.date === today) {
+      history[history.length - 1] = {
+        ...lastCandle,
+        close: currentStock.price,
+        high: Math.max(lastCandle.high, currentStock.price),
+        low: Math.min(lastCandle.low, currentStock.price),
+        volume: currentStock.volume || lastCandle.volume,
+      };
+    } else {
+      // Add a new candle for today with current price
+      history.push({
+        date: today,
+        timestamp: now.getTime(),
+        open: currentStock.previousClose || currentStock.price,
+        high: currentStock.high || currentStock.price,
+        low: currentStock.low || currentStock.price,
+        close: currentStock.price,
+        volume: currentStock.volume || 0,
+      });
+    }
+  }
+  
   res.json({ success: true, data: history, symbol: searchSymbol, range });
 });
 
