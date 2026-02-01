@@ -22,6 +22,7 @@ let simulationSettings = {
   volatilityMultiplier: 1,     // Higher = more price movement
   updateInterval: 2000,        // Base interval in ms (2 seconds)
   alwaysOpen: true,            // Override market hours - ALWAYS OPEN for practice
+  priceTickSize: 0.05,         // Minimum price change increment (0.01, 0.05, 0.10, 0.50, 1.00)
 };
 
 // Middleware - Allow all origins for CORS (adjust for production)
@@ -569,11 +570,19 @@ function updateSimulatedPrices() {
   
   // Apply speed multiplier to volatility
   const speedMultiplier = simulationSettings.speed * simulationSettings.volatilityMultiplier;
+  const tickSize = simulationSettings.priceTickSize; // Minimum price increment
   
   simulatedPrices.forEach((stockData, symbol) => {
     const volatility = getVolatility(symbol) * speedMultiplier;
-    const tickSize = stockData.price * volatility * 0.001;
-    const change = (Math.random() - 0.5) * 2 * tickSize;
+    const maxChange = stockData.price * volatility * 0.001;
+    const rawChange = (Math.random() - 0.5) * 2 * maxChange;
+    
+    // Round change to nearest tick size
+    const roundedChange = Math.round(rawChange / tickSize) * tickSize;
+    // Ensure at least some movement (1 tick) sometimes
+    const change = Math.abs(roundedChange) < tickSize / 2 ? 
+      (Math.random() > 0.7 ? (Math.random() > 0.5 ? tickSize : -tickSize) : 0) : roundedChange;
+    
     const newPrice = Math.max(stockData.price + change, stockData.price * 0.5);
     
     const high = Math.max(stockData.high, newPrice);
@@ -663,7 +672,7 @@ app.get('/api/simulation/settings', (req, res) => {
 
 // Update simulation settings
 app.put('/api/simulation/settings', (req, res) => {
-  const { speed, volatilityMultiplier, alwaysOpen, updateInterval } = req.body;
+  const { speed, volatilityMultiplier, alwaysOpen, updateInterval, priceTickSize } = req.body;
   
   if (speed !== undefined && speed > 0 && speed <= 10) {
     simulationSettings.speed = speed;
@@ -676,6 +685,11 @@ app.put('/api/simulation/settings', (req, res) => {
   }
   if (updateInterval !== undefined && updateInterval >= 500 && updateInterval <= 10000) {
     simulationSettings.updateInterval = updateInterval;
+  }
+  // Valid tick sizes: 0.01, 0.05, 0.10, 0.25, 0.50, 1.00
+  const validTickSizes = [0.01, 0.05, 0.10, 0.25, 0.50, 1.00];
+  if (priceTickSize !== undefined && validTickSizes.includes(priceTickSize)) {
+    simulationSettings.priceTickSize = priceTickSize;
   }
   
   // Restart price updates with new settings
