@@ -274,15 +274,15 @@ async function fetchMultipleQuotes(symbols) {
   return results;
 }
 
-async function fetchHistoricalData(symbol, range = '1y') {
-  const cacheKey = `${symbol}_${range}`;
+async function fetchHistoricalData(symbol, range = '1y', customInterval = null) {
+  const cacheKey = `${symbol}_${range}_${customInterval || 'auto'}`;
   const cached = historyCache.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < HISTORY_CACHE_DURATION)) {
     return cached.data;
   }
 
   try {
-    // Map range to Yahoo Finance parameters
+    // Map range to Yahoo Finance parameters (default intervals)
     const rangeMap = {
       '1d': { range: '1d', interval: '5m' },
       '5d': { range: '5d', interval: '15m' },
@@ -295,8 +295,13 @@ async function fetchHistoricalData(symbol, range = '1y') {
       'max': { range: 'max', interval: '1mo' },
     };
     
+    // Valid Yahoo Finance intervals
+    const validIntervals = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'];
+    
     const params = rangeMap[range] || rangeMap['1y'];
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${params.range}&interval=${params.interval}`;
+    // Use custom interval if provided and valid, otherwise use default
+    const interval = customInterval && validIntervals.includes(customInterval) ? customInterval : params.interval;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${params.range}&interval=${interval}`;
     
     const response = await fetchFromYahoo(url);
     
@@ -486,10 +491,10 @@ app.get('/api/stocks/:symbol/history', async (req, res) => {
       symbol = `${symbol}.NS`;
     }
     
-    const { range = '1y' } = req.query;
-    const data = await fetchHistoricalData(symbol, range);
+    const { range = '1y', interval = null } = req.query;
+    const data = await fetchHistoricalData(symbol, range, interval);
     
-    res.json({ success: true, data, isRealData: true });
+    res.json({ success: true, data, isRealData: true, range, interval: interval || 'auto' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
