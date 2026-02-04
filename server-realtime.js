@@ -26,7 +26,7 @@ app.use(express.json());
 // ============================================================================
 
 const stockCache = new Map();
-const CACHE_DURATION = 30 * 1000; // 30 seconds cache for real data
+const CACHE_DURATION = 5 * 1000; // 30 seconds cache for real data
 const historyCache = new Map();
 const HISTORY_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for historical data
 
